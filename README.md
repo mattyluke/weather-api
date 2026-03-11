@@ -43,36 +43,40 @@ git clone https://github.com/mattyluke/weather-api
 cd weather-api/weather_api
 ```
 
-2. Run migrations:
+2. Install the requirements:
 ```bash
-python manage.py migrate
-python manage.py makemigrations
+pip install -r requirements.txt
 ```
 
-3. Populate the database with data:
+3. Run migrations:
+```bash
+python manage.py makemigrations
+python manage.py migrate
+```
+
+4. Populate the database with data:
 ```bash
 python db_import.py
 ```
 
-4. Run the development server:
+5. Run the development server:
 ```bash
 python manage.py runserver
 ```
 
-5. Visit the API:
+6. Visit the API:
 ```bash
 http://localhost:8000/api/
 ```
 
 ## Key Endpoints
-GET /api/cities                                         | Returns a list of all cities
+|Endpoints                                               |Function                                                                                            |
+|--------------------------------------------------------|----------------------------------------------------------------------------------------------------|
+|GET /api/cities                                         | Returns a list of all cities                                                                       |
+|GET /api/cities/{name}/analytics_extremes/              | Returns extreme days for each variable                                                             |
+|GET /api/cities/{name}/analytics_yearly/{year}          | Returns analytics for each year for a city, optional year argument to filter for that year         |
+|GET /api/cities/{name}/analytics_monthly/{year}/{month} | Returns analytics for each month, optinal year and month argument to filter for that year and month|
+|GET /api/cities/{name}/analytics_streaks/               | Returns longest streaks of wet or dry days for each city                                           |
+|GET /api/cities/{name}/koppen/                          | Returns the Köppen classification of a city, calculated using the data in the database             |
 
-GET /api/cities/{name}/analytics_extremes/              | Returns extreme days for each variable
-
-GET /api/cities/{name}/analytics_yearly/{year}          | Returns analytics for each year for a city, optional year argument to filter for that year
-
-GET /api/cities/{name}/analytics_monthly/{year}/{month} | Returns analytics for each month, optinal year and month argument to filter for that year and month
-
-GET /api/cities/{name}/analytics_streaks/               | Returns longest streaks of wet or dry days for each city
-
-GET /api/cities/{name}/koppen/                          | Returns the Köppen classification of a city, calculated using the data in the database
+POST, PUT and DELETE requests are not possible for a user to do without authentication
