@@ -39,7 +39,8 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
-    "rest_framework.authtoken"
+    "rest_framework.authtoken",
+    "drf_spectacular"
 ]
 
 REST_FRAMEWORK = {
@@ -48,7 +49,14 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticatedOrReadOnly"
-    ]
+    ],
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema"
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Global Historical Weather Analytics API",
+    "DESCRIPTION": "A REST API providing 25 years of historical weather data and detailed analytics",
+    "VERSION": "1.0.0"
 }
 
 MIDDLEWARE = [
