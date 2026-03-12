@@ -69,6 +69,9 @@ python manage.py runserver
 http://localhost:8000/api/
 ```
 
+## API Documentation
+Full API documentation can be found [here](./api_documentation.pdf)
+
 ## Key Endpoints
 |Endpoints                                               |Function                                                                                            |
 |--------------------------------------------------------|----------------------------------------------------------------------------------------------------|
