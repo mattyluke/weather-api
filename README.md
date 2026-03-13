@@ -11,12 +11,12 @@ This API stores and processes data collected between 1st January 2000 and the 31
 The cities chosen for the API cover a wide range of climates for the Köppen classification system..
 
 ## Cities Covered
-1. Yakutsk, Russia: One of the coldest inhabites cities on Earth, extreme continental cold
-2. Reykjavik, Iceland: Represents the subpolar coeanic climate
+1. Yakutsk, Russia: One of the coldest inhabited cities on Earth, extreme continental cold
+2. Reykjavik, Iceland: Represents the subpolar oceanic climate
 3. London, United Kingdom: Temperate oceanic city
 4. Cairo, Egypt: Hot desert
 5. Mumbai, India: Tropical monsoon, representative of the South Asian monsoon climate
-6. Singapore, Singapore: Tropical rainforest, an equitorial city-state with no seasons
+6. Singapore, Singapore: Tropical rainforest, an equatorial city-state with no seasons
 7. Nairobi, Kenya: Subtropical highland
 8. São Paulo, Brazil: Humid subtropical representative of the Southern Hemisphere
 9. Calama, Chile: Cold desert, driest non-polar desert on Earth
@@ -28,7 +28,7 @@ All continents covered except Australia, as Australia's main climates are alread
 - **Backend:** Django 6.0.2 + Django REST Framework 3.16.1
 - **Database:** SQLite
 - **Authentication:** DRF Token Authentication
-- **Documentation:** drf-spectacular (OpenAPI/Swagger)
+- **Documentation:** Markdown (Converted to pdf using this online tool: https://www.markdowntopdf.com/)
 - **Data Source:** Open-Meteo Historical Archive (https://open-meteo.com/)
 
 ## Setup Instructions
@@ -54,17 +54,39 @@ python manage.py makemigrations
 python manage.py migrate
 ```
 
-4. Populate the database with data:
+4. Create a super user
+```bash
+python manage.py createsuperuser
+```
+Then enter credentials as prompted
+
+5. Populate the database with data:
 ```bash
 python db_import.py
 ```
 
-5. Run the development server:
+6. Get your token *REMEMBER TO SAVE THIS*
+```bash
+curl -X POST http://localhost:8000/api/auth/token/ \
+-H "Content-Type: application/json" \
+-d '{"username": "your_username", "password": "your_password"}'
+```
+For Windows use Powershell:
+```powershell
+Invoke-RestMethod -Uri "http://localhost:8000/api/auth/token/" -Method POST -ContentType "application/json" -Body '{"username": "your_username", "password": "your_password"}'
+```
+
+Expected Response:
+```bash
+{"token": "814t7184hf814f1784h1f41"}
+```
+
+7. Run the development server:
 ```bash
 python manage.py runserver
 ```
 
-6. Visit the API:
+8. Visit the API:
 ```bash
 http://localhost:8000/api/
 ```
@@ -76,10 +98,16 @@ Full API documentation can be found [here](./api_documentation.pdf)
 |Endpoints                                               |Function                                                                                            |
 |--------------------------------------------------------|----------------------------------------------------------------------------------------------------|
 |GET /api/cities                                         | Returns a list of all cities                                                                       |
+|POST /api/cities                                        | Upload a city to the database, autopopulates weather records by calling OpenMeteo                  |
 |GET /api/cities/{name}/analytics_extremes/              | Returns extreme days for each variable                                                             |
 |GET /api/cities/{name}/analytics_yearly/{year}          | Returns analytics for each year for a city, optional year argument to filter for that year         |
-|GET /api/cities/{name}/analytics_monthly/{year}/{month} | Returns analytics for each month, optinal year and month argument to filter for that year and month|
+|GET /api/cities/{name}/analytics_monthly/{year}/{month} | Returns analytics for each month, optional year and month argument to filter for that year and month|
 |GET /api/cities/{name}/analytics_streaks/               | Returns longest streaks of wet or dry days for each city                                           |
 |GET /api/cities/{name}/koppen/                          | Returns the Köppen classification of a city, calculated using the data in the database             |
 
-POST, PUT and DELETE requests are not possible for a user to do without authentication
+POST, PUT and DELETE requests are not possible for a user to do without authentication, you can authenticate yourself by include the Authorization header in your request method. i.e.
+```bash
+curl -X POST http://localhost:8000/api/cities/ \
+-H "Authorization: Token 814t7184hf814f1784h1f41" \
+-d {body}
+```
