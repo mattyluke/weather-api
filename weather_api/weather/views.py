@@ -12,6 +12,8 @@ from django.db.models.functions import ExtractYear, ExtractMonth, Round
 from .utils import calculate_koppen
 from drf_spectacular.utils import extend_schema
 
+from db_import import import_weather_records
+
 class CityViewSet(viewsets.ModelViewSet):
     queryset = City.objects.all()
     serializer_class = CitySerializer
@@ -24,6 +26,10 @@ class CityViewSet(viewsets.ModelViewSet):
             self.check_object_permissions(self.request, cities.first())
             return cities.first()
         return super().get_object()
+    
+    def perform_create(self, serializer):
+        city = serializer.save()
+        import_weather_records(city)
 
     @extend_schema(description="Returns the hottest, coldest, wettest and windiest days ever recorded for a city")
     @action(detail=True, methods=['get'])
@@ -250,3 +256,6 @@ class WeatherViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         city = City.objects.get(pk = self.kwargs['city_pk'])
         serializer.save(city=city)
+
+def index(request):
+    return render(request, "weather/index.html")
