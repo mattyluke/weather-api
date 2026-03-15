@@ -3,11 +3,6 @@ import time
 import django
 import requests
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "weather_api.settings")
-django.setup()
-
-from weather.models import City, Weather
-
 Cities = [
     {"name": "Yakutsk", "longitude": 129.73, "latitude": 62.04, "country": "RU"},
     {"name": "Reykjavik", "longitude": -21.82, "latitude": 64.13, "country": "IS"},
@@ -48,6 +43,8 @@ def fetch_weather(longitude, latitude):
 
 
 def import_city(city_data):
+    from weather.models import City
+
     print(f"...Importing {city_data['name']}, {city_data['country']}...")
 
     city, created = City.objects.get_or_create(
@@ -64,10 +61,16 @@ def import_city(city_data):
     else:
         print(f"...Found {city.name} already existing...")
 
-    data = fetch_weather(city_data["longitude"], city_data["latitude"])
+    return city
+
+
+def import_weather_records(city_obj):
+    from weather.models import Weather
+
+    data = fetch_weather(city_obj.longitude, city_obj.latitude)
 
     if not data:
-        print(f"...API Error while importing {city.name}...")
+        print(f"...API Error while importing {city_obj.name}...")
         return
 
     daily = data["daily"]
@@ -76,7 +79,6 @@ def import_city(city_data):
     total = len(dates)
 
     records_created = 0
-    records_skipped = 0
 
     print(f"...Processing {total} days of weather stats...")
 
@@ -87,7 +89,7 @@ def import_city(city_data):
         precipitation = daily["precipitation_sum"][i]
 
         _, created = Weather.objects.get_or_create(
-            city=city,
+            city=city_obj,
             date=date,
             defaults={
                 "maxtemp": temp_max,
@@ -100,11 +102,17 @@ def import_city(city_data):
         if created:
             records_created += 1
 
-    print(f"...Created {records_created} records, skipped {records_skipped} records for {city.name}...")
+    print(f"...Created {records_created} records for {city_obj.name}...")
+
 
 if __name__ == "__main__":
+
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "weather_api.settings")
+    django.setup()
+
     for city in Cities:
-        import_city(city)
-        time.sleep(1)
+        city_obj = import_city(city)
+        import_weather_records(city_obj)
+        time.sleep(5)
 
     print("Import complete")

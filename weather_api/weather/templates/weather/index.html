@@ -1,0 +1,323 @@
+<html>
+    <head>
+        <style>
+            .hidden {display: none;}
+            table {border-collapse: collapse; width: 100%; margin-top: 16px;}
+            th, td {padding: 10px 12px; text-align: left; border-bottom: 1px solid #ddd;}
+            th {background: #f4f4f4;}
+            h2 {margin-top: 24px; margin-bottom: 8px;}
+        </style>
+    </head>
+    <body style="padding:50px;font-family:arial;">
+        <h1>Weather Analytics API</h1>
+        <label for="city_selection">Choose a city:</label>
+        <select name="city_selection" id="city_selection">
+            <option>Select a city</option>
+        </select>
+        <br><br>
+        <label for="analytics_selection">What analytics would you like to see?</label>
+        <select id="analytics_selection" name="analytics_selection">
+            <option value="extremes">Extremes</option>
+            <option value="streaks">Streaks</option>
+            <option value="yearly">Yearly</option>
+            <option value="monthly">Monthly</option>
+            <option value="koppen">Koppen</option>
+        </select>
+        <br><br>
+        <div id="year_input" class="hidden">
+            <label for="year_field">Enter a year (optional): </label>
+            <input type="number" id="year_field" placeholder="Year" min="2000" max="2025">
+        </div>
+        <br>
+        <div id="month_input" class="hidden">
+            <label for="month_field">Enter a month (optional): </label>
+            <input type="number" id="month_field" placeholder="Month (optional)" min="1" max="12">
+        </div>
+
+        <button onclick="search()">Send Request</button>
+
+        <h3>Response</h3>
+        <p id="response"></p>
+        <br><br>
+        <h3>Add a City</h3>
+        <label>Name: <input type="text" id="new_city_name"></label>
+        <br><br>
+        <label>Country (ISO code e.g. GB): <input type="text" id="new_city_country" maxlength="2"></label>
+        <br><br>
+        <label>Latitude: <input type="number" id="new_city_lat" step="0.01"></label>
+        <br><br>
+        <label>Longitude: <input type="number" id="new_city_lng" step="0.01"></label>
+        <br><br>
+        <label>Token: <input type="text" id="new_city_token"></label>
+        <br><br>
+        <button onclick="add_city()">Add City</button>
+        <p id="add_city_response"></p>
+
+        <script>
+                async function load_cities() {
+                    try {
+                        const res = await fetch('/api/cities/');
+                        const data = await res.json();
+                        const select = document.getElementById('city_selection');
+                        data.forEach(city => {
+                            const option = document.createElement('option');
+                            option.value = city.name;
+                            option.textContent = `${city.name}, ${city.country}`;
+                            select.appendChild(option);
+                        });
+                    } catch {
+                        console.error('Could not load cities.')
+                    }
+                }
+
+                load_cities();
+
+                document.getElementById('analytics_selection').addEventListener('change', function() {
+                    const year_input = document.getElementById('year_input');
+                    const month_input = document.getElementById('month_input');
+
+                    if (this.value === 'yearly' || this.value === 'monthly') {
+                        year_input.classList.remove('hidden');
+                    }
+                    else{
+                        year_input.classList.add('hidden');
+                    }
+                    
+                    if (this.value === 'monthly') {
+                        month_input.classList.remove('hidden');
+                    }
+                    else{
+                        month_input.classList.add('hidden');
+                    }
+                })
+
+                async function display_results(analytics, data){
+                    const container = document.getElementById('response');
+                    container.innerHTML = '';
+
+                    if (analytics === 'extremes'){
+                        container.innerHTML = `
+                        <h2>${data.city}, ${data.country} - All time extremes</h2>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Extreme</th>
+                                    <th>Value</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Hottest Day</td>
+                                    <td>${data.extremes.hottest_day.temp}°C</td>
+                                    <td>${data.extremes.hottest_day.date}</td>
+                                </tr>
+                                <tr>
+                                    <td>Coldest Day</td>
+                                    <td>${data.extremes.coldest_day.temp}°C</td>
+                                    <td>${data.extremes.coldest_day.date}</td>
+                                </tr>
+                                <tr>
+                                    <td>Wettest Day</td>
+                                    <td>${data.extremes.wettest_day.precipitation} mm</td>
+                                    <td>${data.extremes.wettest_day.date}</td>
+                                </tr>
+                                <tr>
+                                    <td>Windiest Day</td>
+                                    <td>${data.extremes.windiest_day.wind_speed} km/h</td>
+                                    <td>${data.extremes.windiest_day.date}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        `;
+                    }
+                    else if (analytics === 'streaks'){
+                        container.innerHTML = `
+                        <h2>${data.city}, ${data.country} - All time streaks</h2>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Streak</th>
+                                    <th>Days</th>
+                                    <th>Start</th>
+                                    <th>End</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Longest Dry Streak</td>
+                                    <td>${data.streaks.longest_dry_streak.days} days</td>
+                                    <td>${data.streaks.longest_dry_streak.start}</td>
+                                    <td>${data.streaks.longest_dry_streak.end}</td>
+                                </tr>
+                                <tr>
+                                    <td>Longest Wet Streak</td>
+                                    <td>${data.streaks.longest_wet_streak.days} days</td>
+                                    <td>${data.streaks.longest_wet_streak.start}</td>
+                                    <td>${data.streaks.longest_wet_streak.end}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        `;
+                    }
+                    else if (analytics === 'koppen') {
+                        response.innerHTML = `
+                        <h2>${data.city}, ${data.country} - Koppen Classification</h2>
+                        <p>${data.koppen_code}</p>
+                        <p>${data.classification}</p>
+                        <p>${data.description}</p>
+                        `
+                    }
+                    // 
+                    else if (analytics === 'yearly') {
+                        let rows = data.yearly_data.map(row => `
+                        <tr>
+                            <td>${row.year}</td>
+                            <td>${row.max_temp}°C</td>
+                            <td>${row.min_temp}°C</td>
+                            <td>${row.total_rainfall} mm</td>
+                            <td>${row.avg_wind_speed} km/h</td>
+                            <td>${row.heavy_rain_days}</td>
+                            <td>${row.storm_days}</td>
+                            <td>${row.precipitation_std_dev} mm</td>
+                            <td>${row.wind_speed_std_dev} km/h</td>
+                            <td>${row.wet_dry_ratio}</td>
+                        </tr>
+                        `).join('');
+                        response.innerHTML = `
+                        <h2>${data.city}, ${data.country} - Yearly Analytics</h2>
+                        <table>
+                            <thead>
+                                <th>Year</th>
+                                <th>Maximum Temperature</th>
+                                <th>Minimum Temperature</th>
+                                <th>Total Rainfall</th>
+                                <th>Average Wind Speed</th>
+                                <th>Heavy Rain Days</th>
+                                <th>Storm Days</th>
+                                <th>Precipitation Standard Deviation</th>
+                                <th>Wind Speed Standard Deviation</th>
+                                <th>Wet/Dry Ratio</th>
+                            </thead>
+                            <tbody>${rows}</tbody>
+                        </table>
+                        `
+                    }
+                    else if (analytics === 'monthly'){
+                        let rows = data.monthly_data.map(row => `
+                        <tr>
+                            <td>${row.year}/${row.month}</td>
+                            <td>${row.max_temp}°C</td>
+                            <td>${row.min_temp}°C</td>
+                            <td>${row.total_rainfall} mm</td>
+                            <td>${row.avg_wind_speed} km/h</td>
+                            <td>${row.heavy_rain_days}</td>
+                            <td>${row.storm_days}</td>
+                            <td>${row.max_temp_std_dev}</td>
+                            <td>${row.min_temp_std_dev}</td>
+                            <td>${row.precipitation_std_dev} mm</td>
+                            <td>${row.wind_speed_std_dev} km/h</td>
+                            <td>${row.wet_dry_ratio}</td>
+                        </tr>
+                        `).join('');
+                        response.innerHTML = `
+                        <h2>${data.city}, ${data.country} - Yearly Analytics</h2>
+                        <table>
+                            <thead>
+                                <th>Year/Month</th>
+                                <th>Maximum Temperature</th>
+                                <th>Minimum Temperature</th>
+                                <th>Total Rainfall</th>
+                                <th>Average Wind Speed</th>
+                                <th>Heavy Rain Days</th>
+                                <th>Storm Days</th>
+                                <th>Maximum Temperature Standard Deviation</th>
+                                <th>Minimum Temperature Standard Deviation</th>
+                                <th>Precipitation Standard Deviation</th>
+                                <th>Wind Speed Standard Deviation</th>
+                                <th>Wet/Dry Ratio</th>
+                            </thead>
+                            <tbody>${rows}</tbody>
+                        </table>
+                        `
+                    }
+                }
+
+                async function search() {
+                    const city = document.getElementById('city_selection').value;
+                    const analytics = document.getElementById('analytics_selection').value;
+                    const year = document.getElementById('year_field').value;
+                    const month = document.getElementById('month_field').value;
+
+                    let url;
+                    if (analytics === 'extremes'){
+                        url = `/api/cities/${city}/analytics_extremes/`
+                    }
+                    else if (analytics === 'streaks'){
+                        url = `/api/cities/${city}/analytics_streaks/`
+                    }
+                    else if (analytics === 'yearly'){
+                        if (year) url = `/api/cities/${city}/analytics_yearly/${year}`;
+                        else url = `/api/cities/${city}/analytics_yearly/`;
+                    }
+                    else if (analytics === 'monthly'){
+                        if (year && month) url = `/api/cities/${city}/analytics_monthly/${year}/${month}`;
+                        else if (year) url = `/api/cities/${city}/analytics_monthly/${year}`;
+                        else url = `/api/cities/${city}/analytics_monthly/`;
+                    }
+                    else if (analytics === 'koppen'){
+                        url = `/api/cities/${city}/koppen/`
+                    }
+
+                    try {
+                        const res = await fetch(url);
+                        if (!res.ok) throw new Error();
+                        const data = await res.json();
+                        display_results(analytics, data);
+                    } catch {
+                        document.getElementById('response').innerHTML = 'ERROR: Did you select a city?';
+                    }
+                }
+
+                async function add_city() {
+                    const name = document.getElementById('new_city_name').value;
+                    const country = document.getElementById('new_city_country').value;
+                    const latitude = document.getElementById('new_city_lat').value;
+                    const longitude = document.getElementById('new_city_lng').value;
+                    const token = document.getElementById('new_city_token').value;
+
+                    if (!name || !country || !latitude || !longitude || !token) {
+                        document.getElementById('add_city_response').textContent = 'Please fill in all fields';
+                        return;
+                    }
+
+                    try {
+
+                        document.getElementById('add_city_response').textContent = 'Processing city data...';
+
+                        const res = await fetch('/api/cities/', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Token ${token}`
+                            },
+                            body: JSON.stringify({
+                                name: name,
+                                country: country.toUpperCase(),
+                                latitude: parseFloat(latitude),
+                                longitude: parseFloat(longitude),
+                            })
+                        });
+
+                        if (!res.ok) throw new Error();
+                        const data = await res.json();
+                        document.getElementById('add_city_response').textContent = `${data.name}, ${data.country} has been added successfully`;
+                        load_cities();
+                    } catch {
+                        document.getElementById('add_city_response').textContent = 'Failed to add city';
+                    }
+                }
+            </script>
+
+    </body>
+</html>

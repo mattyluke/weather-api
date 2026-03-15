@@ -10,6 +10,9 @@ from .serializers import CitySerializer, WeatherSerializer
 from django.db.models import Avg, Max, Min, Sum, StdDev, Count, Q
 from django.db.models.functions import ExtractYear, ExtractMonth, Round
 from .utils import calculate_koppen
+from drf_spectacular.utils import extend_schema
+
+from db_import import import_weather_records
 
 class CityViewSet(viewsets.ModelViewSet):
     queryset = City.objects.all()
@@ -23,7 +26,12 @@ class CityViewSet(viewsets.ModelViewSet):
             self.check_object_permissions(self.request, cities.first())
             return cities.first()
         return super().get_object()
+    
+    def perform_create(self, serializer):
+        city = serializer.save()
+        import_weather_records(city)
 
+    @extend_schema(description="Returns the hottest, coldest, wettest and windiest days ever recorded for a city")
     @action(detail=True, methods=['get'])
     def analytics_extremes(self, request, pk=None):
         city = self.get_object()
@@ -62,7 +70,8 @@ class CityViewSet(viewsets.ModelViewSet):
                 }
             }
         })
-
+    
+    @extend_schema(description="Returns analytics such as maximum temperature, minimum temperature, total rainfall and standard deviation for all variables for a given year")
     @action(detail=True, methods=['get'])
     def analytics_yearly(self, request, pk=None, year=None):
         city = self.get_object()
@@ -102,6 +111,7 @@ class CityViewSet(viewsets.ModelViewSet):
         })
 
 
+    @extend_schema(description="Returns analytics such as maximum temperature, minimum temperature, total rainfall and standard deviation for all variables for a given year and month")
     @action(detail=True, methods=['get'])
     def analytics_monthly(self, request, pk=None, year=None, month=None):
         city = self.get_object()
@@ -146,6 +156,7 @@ class CityViewSet(viewsets.ModelViewSet):
             'monthly_data' : list(monthly_records)
         })
     
+    @extend_schema(description="Returns the longest consecutive days with precipitation and longest consecutive days without precipitation for a given city across all recorded years")
     @action(detail=True, methods=['get'])
     def analytics_streaks(self, request, pk=None):
         city = self.get_object()
@@ -214,6 +225,7 @@ class CityViewSet(viewsets.ModelViewSet):
             }
         })
 
+    @extend_schema(description="Returns the Köppen classification of a city using the recorded measurements")
     @action(detail=True, methods=['get'])
     def koppen(self, request, pk=None):
         city = self.get_object()
@@ -244,3 +256,6 @@ class WeatherViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         city = City.objects.get(pk = self.kwargs['city_pk'])
         serializer.save(city=city)
+
+def index(request):
+    return render(request, "weather/index.html")

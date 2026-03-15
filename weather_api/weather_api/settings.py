@@ -25,7 +25,7 @@ SECRET_KEY = "django-insecure-6@9i==(s*=vi$3aabk^(ydpf)@r1s06nvn2eo3e#e@6=%(k^s0
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['mattyluke.pythonanywhere.com', 'localhost', '127.0.0.1']
 
 
 # Application definition
@@ -39,7 +39,8 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
-    "rest_framework.authtoken"
+    "rest_framework.authtoken",
+    "drf_spectacular"
 ]
 
 REST_FRAMEWORK = {
@@ -48,7 +49,14 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticatedOrReadOnly"
-    ]
+    ],
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema"
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Global Historical Weather Analytics API",
+    "DESCRIPTION": "A REST API providing 25 years of historical weather data and detailed analytics",
+    "VERSION": "1.0.0"
 }
 
 MIDDLEWARE = [
