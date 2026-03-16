@@ -67,6 +67,7 @@ Then enter credentials as prompted
 ```bash
 python db_import.py
 ```
+This can take some time, give it 5-10 minutes to populate all 10 cities
 
 6. Get your token *REMEMBER TO SAVE THIS*
 ```bash
